@@ -34,3 +34,5 @@ backend/.env
 
 # Uploads Folder (If any files uploaded by users/organizers locally)
 backend/uploads/
+
+
