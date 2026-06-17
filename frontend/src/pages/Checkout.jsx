@@ -1,55 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { CreditCard, CheckCircle, ArrowLeft, Loader2, ShieldCheck, Clock } from 'lucide-react'; // Clock icons
+import { CreditCard, CheckCircle, ArrowLeft, Loader2, ShieldCheck, Clock } from 'lucide-react'; 
 import axios from 'axios'; 
+// 🌟 [STRIPE IMPORTS]
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-const Checkout = () => {
-  const { id } = useParams(); 
-  const location = useLocation();
-  const navigate = useNavigate();
+// 🌟 Initialize Stripe with your actual Publishable Key from the image
+const stripePromise = loadStripe('pk_test_51TjNEmFtkb2m0c7X7ygVHQ3TIkmQ9tU3OpWa2xHWGMhK3M9Sh21Y5V4krPTo1RoVPhKbm5dAWemIjy08Sde2bVNY00db230Gj2');
 
-  //The 'showTime' is also correctly retrieved from the state sent from the SeatBooking page.
-  const { seats = [], total = 0, showTime = '' } = location.state || {};
-
-  // Form States
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-
-  // Status States
+// We separate the inner form logic to use Stripe hooks correctly
+const CheckoutForm = ({ id, seats, total, showTime, name, setName, email, setEmail, setIsSuccess, setQrImage }) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  
-  // New state to hold the actual QR Image string coming from the backend
-  const [qrImage, setQrImage] = useState('');
-
-  // Security measures to block people from accessing this page without logging in through fraudulent means
-  useEffect(() => {
-    const userJson = localStorage.getItem('userInfo');
-    const storedUser = userJson ? JSON.parse(userJson) : null;
-    
-    // If the user is not found in localStorage, redirect to the register page
-    if (!storedUser) {
-      alert('Access denied. Please register or login to complete your booking.');
-      navigate('/register');
-    }
-  }, [navigate]);
+  const [stripeError, setStripeError] = useState('');
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !cardNumber || !expiry || !cvv) {
-      alert('Please fill in all payment details.');
+    
+    if (!stripe || !elements) {
+      return; // Stripe has not loaded yet
+    }
+
+    if (!name || !email) {
+      alert('Please fill in your Name and Email.');
       return;
     }
 
     setIsProcessing(true);
+    setStripeError('');
 
     try {
       const userJson = localStorage.getItem('userInfo');
       const storedUser = userJson ? JSON.parse(userJson) : null;
-      
       const currentUserId = storedUser?._id || storedUser?.id || storedUser?.user?._id || storedUser?.user?.id; 
 
       if (!currentUserId) {
@@ -58,19 +42,38 @@ const Checkout = () => {
         return;
       }
 
-      //We pass the 'showTime' here as we configured it in the backend.
+      // 1. Get the CardElement instance safely
+      const cardElement = elements.getElement(CardElement);
+
+      // 2. Create secure PaymentMethod via Stripe Servers
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          name: name,
+          email: email,
+        },
+      });
+
+      if (error) {
+        setStripeError(error.message);
+        setIsProcessing(false);
+        return;
+      }
+
+      // 3. Send the Booking Data along with the secure token 'paymentMethod.id' to our Backend
       const bookingData = {
         user: currentUserId,              
         event: id,                        
         seats: seats,                    
         totalAmount: total,              
-        showTime: showTime 
+        showTime: showTime,
+        paymentMethodId: paymentMethod.id // 🌟 Pass the secure Stripe Token
       };
 
       const response = await axios.post('http://localhost:5000/api/bookings', bookingData);
 
       if (response.status === 201 || response.status === 200) {
-        //The actual QR string that is successfully saved from the backend is put into the state.
         if (response.data?.booking?.qrCode) {
           setQrImage(response.data.booking.qrCode);
         }
@@ -83,6 +86,121 @@ const Checkout = () => {
       setIsProcessing(false);
     }
   };
+
+  return (
+    <form onSubmit={handlePaymentSubmit} className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+      <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+        <CreditCard className="w-6 h-6 text-emerald-400" />
+        <h2 className="text-xl font-bold text-white">Secure Credit / Debit Card Payment</h2>
+      </div>
+
+      {/* Name on Card Input */}
+      <div className="space-y-2">
+        <label className="text-sm text-slate-400 font-medium">Name on Card</label>
+        <input 
+          type="text" 
+          required
+          placeholder="e.g. P. M. Silva" 
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+        />
+      </div>
+
+      {/* Email Input */}
+      <div className="space-y-2">
+        <label className="text-sm text-slate-400 font-medium">Email Address (For Digital Ticket)</label>
+        <input 
+          type="email" 
+          required
+          placeholder="piyumi@example.com" 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+        />
+      </div>
+
+      {/* 🌟 STRIPE SECURE CARD ELEMENT BOX */}
+      <div className="space-y-2">
+        <label className="text-sm text-slate-400 font-medium">Credit or Debit Card Details</label>
+        <div className="w-full bg-slate-950 border border-slate-800 focus-within:border-emerald-500 rounded-xl py-4 px-4 transition-colors">
+          <CardElement 
+            options={{
+              style: {
+                base: {
+                  color: '#f1f5f9',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSmoothing: 'antialiased',
+                  fontSize: '16px',
+                  '::placeholder': {
+                    color: '#64748b',
+                  },
+                },
+                invalid: {
+                  color: '#f87171',
+                  iconColor: '#f87171',
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Stripe Inline Error Message */}
+      {stripeError && (
+        <p className="text-sm font-medium text-red-400 bg-red-500/10 border border-red-500/20 py-2.5 px-4 rounded-xl text-center">
+          ⚠️ {stripeError}
+        </p>
+      )}
+
+      {/* Submit / Pay Button */}
+      <button 
+        type="submit"
+        disabled={isProcessing || !stripe}
+        className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-base cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Processing Payment...</span>
+          </>
+        ) : (
+          <span>Pay LKR {total} Securely</span>
+        )}
+      </button>
+
+      <div className="flex items-center justify-center gap-2 text-slate-500 text-xs pt-2">
+        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+        <span>256-bit SSL Encrypted Payment Connection</span>
+      </div>
+    </form>
+  );
+};
+
+const Checkout = () => {
+  const { id } = useParams(); 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { seats = [], total = 0, showTime = '' } = location.state || {};
+
+  // Form States (Shared with the Form Wrapper)
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  // Status States - 🌟 (Fixed the error duplicate lines here)
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [qrImage, setQrImage] = useState('');
+
+  useEffect(() => {
+    const userJson = localStorage.getItem('userInfo');
+    const storedUser = userJson ? JSON.parse(userJson) : null;
+    
+    if (!storedUser) {
+      alert('Access denied. Please register or login to complete your booking.');
+      navigate('/register');
+    }
+  }, [navigate]);
 
   if (seats.length === 0) {
     return (
@@ -137,7 +255,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/*[ADDED UI]  */}
               {showTime && (
                 <div className="flex items-center gap-2 bg-slate-950 border border-slate-800/80 rounded-xl p-3 text-sm text-slate-300">
                   <Clock className="w-4 h-4 text-emerald-400" />
@@ -145,7 +262,7 @@ const Checkout = () => {
                 </div>
               )}
 
-              {/* The professional section that shows the actual QR Code */}
+              {/* QR Code Section */}
               <div className="flex flex-col items-center justify-center pt-2 space-y-3">
                 <div className="p-4 bg-white rounded-2xl shadow-inner group flex items-center justify-center min-w-[160px] min-h-[160px]">
                   {qrImage ? (
@@ -174,7 +291,7 @@ const Checkout = () => {
         </div>
       ) : (
         
-        /* 2. SECURE CHECKOUT FORM */
+        /* 2. SECURE CHECKOUT FORM WRAPPED IN STRIPE ELEMENTS PROVIDER */
         <div className="max-w-4xl mx-auto px-4 pt-8">
           {/* Back Button */}
           <button 
@@ -187,104 +304,23 @@ const Checkout = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
             
-            {/* Payment Info Form */}
-            <form onSubmit={handlePaymentSubmit} className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-                <CreditCard className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-xl font-bold text-white">Secure Credit / Debit Card Payment</h2>
-              </div>
+            {/* Form Wrapped with Elements */}
+            <Elements stripe={stripePromise}>
+              <CheckoutForm 
+                id={id}
+                seats={seats}
+                total={total}
+                showTime={showTime}
+                name={name}
+                setName={setName}
+                email={email}
+                setEmail={setEmail}
+                setIsSuccess={setIsSuccess}
+                setQrImage={setQrImage}
+              />
+            </Elements>
 
-              {/* Name on Card Input */}
-              <div className="space-y-2">
-                <label className="text-sm text-slate-400 font-medium">Name on Card</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g. P. M. Silva" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-              </div>
-
-              {/* Email Input */}
-              <div className="space-y-2">
-                <label className="text-sm text-slate-400 font-medium">Email Address (For Digital Ticket)</label>
-                <input 
-                  type="email" 
-                  required
-                  placeholder="piyumi@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-              </div>
-
-              {/* Card Number Input */}
-              <div className="space-y-2">
-                <label className="text-sm text-slate-400 font-medium">Card Number</label>
-                <input 
-                  type="text" 
-                  required
-                  maxLength="16"
-                  placeholder="4123 4567 8901 2345" 
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white font-mono focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-              </div>
-
-              {/* Expiry & CVV Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-slate-400 font-medium">Expiry Date</label>
-                  <input 
-                    type="text" 
-                    required
-                    maxLength="5"
-                    placeholder="MM/YY" 
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white font-mono focus:outline-none focus:border-emerald-500 transition-colors"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-slate-400 font-medium">CVV</label>
-                  <input 
-                    type="password" 
-                    required
-                    maxLength="3"
-                    placeholder="***" 
-                    value={cvv}
-                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white font-mono focus:outline-none focus:border-emerald-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Submit / Pay Button */}
-              <button 
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-base cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Processing Payment...</span>
-                  </>
-                ) : (
-                  <span>Pay LKR {total} Securely</span>
-                )}
-              </button>
-
-              <div className="flex items-center justify-center gap-2 text-slate-500 text-xs pt-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>256-bit SSL Encrypted Payment Connection</span>
-              </div>
-            </form>
-
-            {/*Quick Order Summary Widget */}
+            {/* Quick Order Summary Widget */}
             <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
               <h3 className="text-lg font-bold text-white pb-2 border-b border-slate-800">Order Summary</h3>
               <div className="space-y-3 text-sm">
@@ -292,7 +328,6 @@ const Checkout = () => {
                   <span className="text-slate-400">Selected Seats:</span>
                   <span className="text-white font-bold tracking-wide">{seats.join(', ')}</span>
                 </div>
-                {/*[ADDED UI]  */}
                 {showTime && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">Show Time:</span>

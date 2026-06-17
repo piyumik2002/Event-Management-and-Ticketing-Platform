@@ -12,7 +12,6 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Event',
       required: true,
     },
-    
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User', 
@@ -29,7 +28,6 @@ const bookingSchema = new mongoose.Schema(
     qrCode: {
       type: String, 
     },
-    
     showTime: {
       type: String,
       default: '', 
@@ -37,7 +35,12 @@ const bookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['Pending', 'Confirmed', 'Cancelled'],
-      default: 'Confirmed',
+      default: 'Confirmed', // Keeps confirmed as default when booking is successful
+    },
+    // Stores the unique Stripe Payment Transaction ID for tracking purposes
+    paymentIntentId: {
+      type: String,
+      required: false, // Set to false so it doesn't break if any legacy test bookings exist
     },
   },
   {

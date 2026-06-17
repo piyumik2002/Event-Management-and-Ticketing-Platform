@@ -4,13 +4,14 @@ import nodemailer from 'nodemailer';
 export const generateQRAndSendEmail = async (booking, userEmail, eventTitle) => {
   try {
     // Create a unique data string to be inserted into the QR Code. This can include the booking ID, user ID, and seat information.
+    // 🌟 [PRESERVED] - Kept the original JSON stringify logic intact
     const qrData = JSON.stringify({
       bookingId: booking._id,
       userId: booking.user,
       seats: booking.seats,
     });
 
-    //Generate a QR Code (as a Base64 Image) from the data string
+    // Generate a QR Code (as a Base64 Image) from the data string
     const qrCodeImage = await QRCode.toDataURL(qrData);
 
     // Create an email transporter (Gmail settings)
@@ -36,14 +37,24 @@ export const generateQRAndSendEmail = async (booking, userEmail, eventTitle) => 
           <p><strong>Total Paid:</strong> LKR ${booking.totalAmount}</p>
           <br/>
           <p><strong>Scan your QR Code at the gate:</strong></p>
-          <img src="${qrCodeImage}" alt="Ticket QR Code" style="width:200px; height:200px;" />
+          
+          <img src="cid:ticket-qr" alt="Ticket QR Code" style="width:200px; height:200px; border: 1px solid #eee; padding: 5px; background: #fff;" />
+          
           <br/>
           <p>See you at the event!</p>
         </div>
       `,
+      // 🌟 [UPDATED] - Sending Base64 image securely to Gmail as an Inline Attachment (CID)
+      attachments: [
+        {
+          filename: 'ticket-qr.png',
+          path: qrCodeImage, // Generated Base64 string
+          cid: 'ticket-qr'   // Identifier linking with src="cid:ticket-qr" in HTML
+        }
+      ]
     };
 
-    //send email with the ticket and QR code
+    // send email with the ticket and QR code
     await transporter.sendMail(mailOptions);
     console.log('📧 Ticket Email sent successfully with QR!');
     
