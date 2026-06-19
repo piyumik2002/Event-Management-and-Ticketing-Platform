@@ -4,7 +4,7 @@ import User from '../models/User.js';
 // @route   GET /api/admin/users
 export const getAllUsers = async (req, res) => {
   try {
-    // [FIXED] - The syntax has been simplified. Only the password is removed and all other data (including verificationDoc) is retrieved as normal.
+    //The syntax has been simplified. Only the password is removed and all other data (including verificationDoc) is retrieved as normal.
     const users = await User.find({}).select('-password'); 
     res.status(200).json(users);
   } catch (error) {

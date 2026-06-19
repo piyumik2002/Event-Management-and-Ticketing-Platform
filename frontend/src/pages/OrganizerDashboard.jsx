@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Imported useNavigate for routing
 import axios from 'axios';
 import { 
   Calendar, MapPin, DollarSign, Users, Image, FileText, Type, 
   Plus, X, Loader2, Clock, Upload, LayoutDashboard, CalendarPlus, 
-  Ticket 
+  Ticket, Settings 
 } from 'lucide-react';
 
+// Importing the optimized dark-themed reusable Revenue Chart component
+import RevenueChart from '../components/RevenueChart';
+
 const OrganizerDashboard = () => {
-  // Navigation Tab එක පාලනය කිරීමට ස්ටේට් එකක් (Default එක 'dashboard')
+  const navigate = useNavigate(); // Initialized navigate function
+  
+  // State to control the active navigation tab (Default is 'dashboard')
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Gets the name of the logged in Organizer from LocalStorage.
   const userJson = localStorage.getItem('userInfo') || localStorage.getItem('user');
   const user = userJson ? JSON.parse(userJson) : null;
   
-  // Dynamic එකට API call කිරීමට organizerId එක වෙන් කර ගැනීම
+  // Extract organizerId to dynamically make API calls
   const organizerId = user?._id || user?.id || user?.user?._id || user?.user?.id;
 
   // States to keep data in the form 
@@ -26,10 +32,10 @@ const OrganizerDashboard = () => {
   const [category, setCategory] = useState('Movie');
   const [imageUrl, setImageUrl] = useState(''); 
 
-  //[ADDED] -A state to keep a common date only for events other than movies
+  // A state to keep a common date only for events other than movies
   const [nonMovieDate, setNonMovieDate] = useState('');
 
-  //[UPDATED] -States to add Date along with Showtimes
+  // States to add Date along with Showtimes
   const [showTimes, setShowTimes] = useState([]); 
   const [timeInput, setTimeInput] = useState('');
   const [showTimeDateInput, setShowTimeDateInput] = useState(''); // Special date related to Showtime
@@ -38,12 +44,17 @@ const OrganizerDashboard = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 🌟 [UPDATED STATES] - Backend එකෙන් එන Live Metrics සහ Recent Bookings ලිස්ට් එක තියාගන්න ස්ටේට්ස්
+  // States to hold live metrics and recent bookings list fetched from backend
   const [stats, setStats] = useState({ totalRevenue: 0, ticketsSold: 0, activeEvents: 0 });
   const [recentBookings, setRecentBookings] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  // 🌟 [UPDATED EFFECT] - පිටුව Load වන විට ලයිව් දත්ත සහ Recent Bookings එකවර ලබා ගැනීම
+  // States to hold analytical chart datasets (Monthly feed & Last 7 Days aggregation)
+  const [monthlyChartData, setMonthlyChartData] = useState([]);
+  const [analytics7DaysData, setAnalytics7DaysData] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+
+  // 📊 Live statistics, 7-Day data, and Monthly charts fetching logic combined optimally
   useEffect(() => {
     const fetchOrganizerStats = async () => {
       try {
@@ -56,30 +67,50 @@ const OrganizerDashboard = () => {
           },
         };
 
-        // අපි අලුතින් හදාගත්තු /api/bookings/organizer/:id Endpoint එකට කෝල් කිරීම
+        // Calling the organizer metrics endpoint (Now fetches both metrics, 7-day and monthly analytics)
         const response = await axios.get(`http://localhost:5000/api/bookings/organizer/${organizerId}`, config);
         
         if (response.data.success) {
-          // ස්ටැට්ස් කාඩ්ස් වල දත්ත යාවත්කාලීන කිරීම
+          // Updating real-time statistical metrics cards
           setStats({
-            totalRevenue: response.data.metrics.totalRevenue,
-            ticketsSold: response.data.metrics.ticketsSold,
-            activeEvents: response.data.metrics.activeEventsCount
+            totalRevenue: response.data.metrics?.totalRevenue || 0,
+            ticketsSold: response.data.metrics?.ticketsSold || 0,
+            activeEvents: response.data.metrics?.activeEventsCount || 0
           });
-          // මෑතකදී සිදුකල බුකින්ස් 5 වගුවට එකතු කිරීම
+
+          // Appending recent bookings data to the state array
           setRecentBookings(response.data.recentBookings || []);
+          
+          // 1. 🌟 Daily Chart: Mapping and chronologically sorting the 7-day analytics dataset
+          const mapped7Days = (response.data.chartData || []).map(item => ({
+            date: item.date || 'N/A',
+            revenue: Number(item.revenue || 0)
+          }));
+          
+          // Guaranteed chronological sort by date to prevent plotting visual glitches
+          mapped7Days.sort((a, b) => new Date(a.date) - new Date(b.date));
+          setAnalytics7DaysData(mapped7Days);
+
+          // 2. 🌟 Annual Chart: Dynamically map monthly backend data keys into the safe format required by the chart
+          const mappedMonthly = (response.data.monthlyData || []).map(item => ({
+            date: item.date || item.name || item.month || 'N/A',
+            revenue: Number(item.revenue !== undefined ? item.revenue : 0)
+          }));
+          setMonthlyChartData(mappedMonthly);
         }
         setStatsLoading(false);
+        setChartsLoading(false);
       } catch (err) {
         console.error('Error fetching dashboard stats & bookings:', err);
         setStatsLoading(false);
+        setChartsLoading(false);
       }
     };
 
     fetchOrganizerStats();
   }, [user?.token, organizerId]);
 
-  //Function that converts an image into a Base64 String as soon as it is selected
+  // Function that converts an image into a Base64 String as soon as it is selected
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setError('');
@@ -96,7 +127,7 @@ const OrganizerDashboard = () => {
     }
   };
 
-  //Function that creates Slots by combining both date and time
+  // Function that creates Slots by combining both date and time
   const handleAddShowTime = () => {
     if (!showTimeDateInput) {
       setError('Please select a specific date for this show time.');
@@ -120,7 +151,7 @@ const OrganizerDashboard = () => {
     }
   };
 
-  //How to remove an added slot
+  // How to remove an added slot
   const handleRemoveShowTime = (indexToRemove) => {
     setShowTimes(showTimes.filter((_, index) => index !== indexToRemove));
   };
@@ -140,7 +171,7 @@ const OrganizerDashboard = () => {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Fixed bug: changed loading(true) to setLoading(true)
 
     try {
       const config = {
@@ -181,15 +212,30 @@ const OrganizerDashboard = () => {
       setNonMovieDate('');
       setLoading(false);
 
-      // Event එකක් දාපු ගමන් ආපහු ඩෑෂ්බෝඩ් එක රීෆ්‍රෙෂ් කරලා දත්ත යාවත්කාලීන කිරීම
+      // Re-fetching real-time statistics immediately after a new event is successfully posted
       const statsRes = await axios.get(`http://localhost:5000/api/bookings/organizer/${organizerId}`, config);
       if (statsRes.data.success) {
         setStats({
-          totalRevenue: statsRes.data.metrics.totalRevenue,
-          ticketsSold: statsRes.data.metrics.ticketsSold,
-          activeEvents: statsRes.data.metrics.activeEventsCount
+          totalRevenue: statsRes.data.metrics?.totalRevenue || 0,
+          ticketsSold: statsRes.data.metrics?.ticketsSold || 0,
+          activeEvents: statsRes.data.metrics?.activeEventsCount || 0
         });
         setRecentBookings(statsRes.data.recentBookings || []);
+        
+        const remmappedMonthly = (statsRes.data.monthlyData || []).map(item => ({
+          date: item.date || item.name || item.month || 'N/A',
+          revenue: Number(item.revenue !== undefined ? item.revenue : 0)
+        }));
+        setMonthlyChartData(remmappedMonthly);
+
+        const remmapped7Days = (statsRes.data.chartData || []).map(item => ({
+          date: item.date || 'N/A',
+          revenue: Number(item.revenue || 0)
+        }));
+        
+        // Sorting the re-fetched live dataset as well
+        remmapped7Days.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setAnalytics7DaysData(remmapped7Days);
       }
 
     } catch (err) {
@@ -227,6 +273,15 @@ const OrganizerDashboard = () => {
               <CalendarPlus className="w-4 h-4" />
               <span>Publish New Event</span>
             </button>
+
+            {/* Added: Navigation link to Manage Events Page */}
+            <button 
+              onClick={() => navigate('/organizer/manage-events')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
+            >
+              <Settings className="w-4 h-4 text-emerald-400" />
+              <span>Manage Events</span>
+            </button>
           </nav>
         </div>
 
@@ -261,6 +316,13 @@ const OrganizerDashboard = () => {
             >
               Publish Event
             </button>
+            {/* Added: Mobile View Manage Button */}
+            <button 
+              onClick={() => navigate('/organizer/manage-events')}
+              className="flex-1 py-2 px-3 text-center text-xs font-bold rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400"
+            >
+              Manage
+            </button>
           </div>
         </div>
 
@@ -275,7 +337,7 @@ const OrganizerDashboard = () => {
                   <div className="space-y-2">
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Revenue</span>
                     <h3 className="text-3xl font-black text-emerald-400">
-                      {statsLoading ? <Loader2 className="w-6 h-6 animate-spin text-emerald-400 inline" /> : `Rs. ${stats.totalRevenue.toLocaleString()}`}
+                      {statsLoading ? <Loader2 className="w-6 h-6 animate-spin text-emerald-400 inline" /> : `Rs. ${(stats.totalRevenue || 0).toLocaleString()}`}
                     </h3>
                   </div>
                   <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
@@ -310,6 +372,39 @@ const OrganizerDashboard = () => {
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* ─── 📊 CHARTS GRID SECTION ─── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Chart 1: Last 7 Days Revenue Analytics */}
+              <div>
+                {chartsLoading ? (
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl h-[350px] flex items-center justify-center text-slate-400 text-sm">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-emerald-400" /> Loading Weekly Analytics...
+                  </div>
+                ) : (
+                  <RevenueChart 
+                    data={analytics7DaysData} 
+                    title="Revenue Analytics" 
+                    subtitle="Revenue growth tracking for the last 7 days"
+                  />
+                )}
+              </div>
+
+              {/* Chart 2: 12-Month Annual Statistics Overview */}
+              <div>
+                {chartsLoading ? (
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl h-[350px] flex items-center justify-center text-slate-400 text-sm">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-emerald-400" /> Loading Annual Overview...
+                  </div>
+                ) : (
+                  <RevenueChart 
+                    data={monthlyChartData} 
+                    title="Annual Overview" 
+                    subtitle="Monthly distribution of sales and ticket conversion rates"
+                  />
+                )}
               </div>
             </div>
 
@@ -357,7 +452,7 @@ const OrganizerDashboard = () => {
                             {booking.event?.title || 'Deleted Entry'}
                           </td>
                           <td className="py-4 px-6 font-mono text-emerald-400">
-                            {booking.seats ? booking.seats.join(', ') : 'N/A'}
+                            {booking.seats ? (Array.isArray(booking.seats) ? booking.seats.join(', ') : booking.seats) : 'N/A'}
                           </td>
                           <td className="py-4 px-6 text-white font-semibold">
                             Rs. {booking.totalAmount?.toLocaleString()}

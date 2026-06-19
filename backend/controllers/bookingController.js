@@ -7,8 +7,8 @@ import Stripe from 'stripe';
 // Initialize Stripe instance using the secret key from the environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// @desc    Create a new booking & send ticket (With Stripe Payment Integration)
-// @route   POST /api/bookings
+// @desc     Create a new booking & send ticket (With Stripe Payment Integration)
+// @route    POST /api/bookings
 export const createBooking = async (req, res) => {
   // The frontend correctly retrieves the data 'user', 'event', 'showTime', and the new 'paymentMethodId'.
   const { user: userId, event: eventId, seats, totalAmount, showTime, paymentMethodId } = req.body;
@@ -76,8 +76,8 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// @desc    Get all booked seats for a specific event and show time
-// @route   GET /api/bookings/booked-seats/:eventId
+// @desc     Get all booked seats for a specific event and show time
+// @route    GET /api/bookings/booked-seats/:eventId
 export const getBookedSeats = async (req, res) => {
   const { eventId } = req.params;
   const { time } = req.query; 
@@ -104,9 +104,9 @@ export const getBookedSeats = async (req, res) => {
   }
 };
 
-// ─── 📊 NEW FEATURE: ORGANIZER DASHBOARD METRICS & RECENT BOOKINGS ───
-// @desc    Get recent bookings and analytics metrics for a specific organizer
-// @route   GET /api/bookings/organizer/:organizerId
+// ─── 📊  ORGANIZER DASHBOARD METRICS, BOTH CHARTS & RECENT BOOKINGS ───
+// desc     Get recent bookings and analytics metrics for a specific organizer
+// route    GET /api/bookings/organizer/:organizerId
 export const getOrganizerAnalytics = async (req, res) => {
   try {
     const { organizerId } = req.params;
@@ -126,10 +126,60 @@ export const getOrganizerAnalytics = async (req, res) => {
       ticketsSold += booking.seats ? booking.seats.length : 0;
     });
 
-    // 3. Count total active events created by this organizer
+    // Count total active events created by this organizer
     const activeEventsCount = await Event.countDocuments({ organizer: organizerId });
 
-    // 4. Extract only the last 5 bookings for the dashboard live activity feed table
+    // 3. 🌟 Daily Revenue Chart Data (Fixed for Sri Lanka Timezone Consistency)
+    const chartData = [];
+    
+    // Get the current date string strictly in Sri Lanka timezone (YYYY-MM-DD)
+    const slTodayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' });
+    const slToday = new Date(slTodayStr);
+
+    // Create a structured empty dataset for the last 7 days using the SL timezone reference
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(slToday);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' });
+        chartData.push({ date: dateStr, revenue: 0 });
+    }
+
+    // Map booking records into their respective timezone-matched dates
+    bookings.forEach((booking) => {
+        const localDateStr = new Date(booking.createdAt).toLocaleDateString('en-CA', {
+            timeZone: 'Asia/Colombo'
+        });
+        const found = chartData.find(item => item.date === localDateStr);
+        if (found) {
+            found.revenue += booking.totalAmount || 0;
+        }
+    });
+
+    // 4. 🌟 Annual Overview Chart Data (Grouped by Month in Sri Lanka Timezone)
+    const monthlyMap = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Generate empty structures for the last 12 months
+    const currentSlDate = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }));
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(currentSlDate);
+      d.setMonth(d.getMonth() - i);
+      const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      monthlyMap[label] = { date: label, revenue: 0 };
+    }
+
+    // Accumulate booking totals into their respective months using SL local time
+    bookings.forEach((booking) => {
+      const bDate = new Date(new Date(booking.createdAt).toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+      const label = `${monthNames[bDate.getMonth()]} ${bDate.getFullYear()}`;
+      if (monthlyMap[label]) {
+        monthlyMap[label].revenue += booking.totalAmount || 0;
+      }
+    });
+
+    const monthlyData = Object.values(monthlyMap);
+
+    // Extract only the last 5 bookings for the dashboard live activity feed table
     const recentBookings = bookings.slice(0, 5);
 
     // 5. Send optimized analytics structure to the frontend dashboard
@@ -140,7 +190,9 @@ export const getOrganizerAnalytics = async (req, res) => {
         ticketsSold,
         activeEventsCount
       },
-      recentBookings
+      recentBookings,
+      chartData,     // 7-day revenue dataset
+      monthlyData    // 12-month annual overview dataset
     });
   } catch (error) {
     console.error("Analytics Error:", error.message);

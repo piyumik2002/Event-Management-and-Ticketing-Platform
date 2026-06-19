@@ -9,6 +9,8 @@ import Checkout from './pages/Checkout';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
+import ManageEvents from './components/ManageEvents'; // Imported the ManageEvents component
+import AboutUs from './pages/AboutUs'; // Imported the AboutUs component for the new page
 
 function App() {
   return (
@@ -19,12 +21,17 @@ function App() {
         
         <main className="grow">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} /> 
+            
+            {/* New Public Route for About Us Page */}
+            <Route path="/about-us" element={<AboutUs />} />
             
             <Route path="/event/:id" element={<EventDetails />} />
             <Route path="/booking/:id" element={<SeatBooking />} />
             <Route path="/checkout/:id" element={<Checkout />} /> 
             
+            {/* Protected Route for Organizer Dashboard */}
             <Route 
               path="/organizer/dashboard" 
               element={
@@ -34,6 +41,17 @@ function App() {
               } 
             />
 
+            {/* New Protected Route for Managing Events */}
+            <Route 
+              path="/organizer/manage-events" 
+              element={
+                <ProtectedRoute allowedRoles={['organizer', 'admin']}>
+                  <ManageEvents />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Protected Route for Admin Dashboard */}
             <Route 
               path="/admin" 
               element={
@@ -43,8 +61,8 @@ function App() {
               } 
             />
             
+            {/* Auth Routes */}
             <Route path="/login" element={<Login />} /> 
-            
             <Route path="/register" element={<Login />} /> 
           </Routes>
         </main>
