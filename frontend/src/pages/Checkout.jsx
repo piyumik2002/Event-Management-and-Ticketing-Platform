@@ -6,10 +6,13 @@ import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// 🌟 Initialize Stripe with your actual Publishable Key from the image
+// 🌟 Imported the background image pattern for consistency
+import bgImage from '/src/assets/bg-pattern.jpg';
+
+// Initialize Stripe with your actual Publishable Key
 const stripePromise = loadStripe('pk_test_51TjNEmFtkb2m0c7X7ygVHQ3TIkmQ9tU3OpWa2xHWGMhK3M9Sh21Y5V4krPTo1RoVPhKbm5dAWemIjy08Sde2bVNY00db230Gj2');
 
-// We separate the inner form logic to use Stripe hooks correctly
+// Inner form logic for Stripe elements handling
 const CheckoutForm = ({ id, seats, total, showTime, name, setName, email, setEmail, setIsSuccess, setQrImage }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -61,7 +64,7 @@ const CheckoutForm = ({ id, seats, total, showTime, name, setName, email, setEma
         return;
       }
 
-      // 3. Send the Booking Data along with the secure token 'paymentMethod.id' to our Backend
+      // 3. Send the Booking Data along with the secure token 'paymentMethod.id' to Backend
       const bookingData = {
         user: currentUserId,              
         event: id,                        
@@ -88,42 +91,42 @@ const CheckoutForm = ({ id, seats, total, showTime, name, setName, email, setEma
   };
 
   return (
-    <form onSubmit={handlePaymentSubmit} className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
-      <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+    <form onSubmit={handlePaymentSubmit} className="lg:col-span-3 bg-slate-900/75 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-[0_15px_35px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+      <div className="flex items-center gap-3 pb-4 border-b border-slate-800/80">
         <CreditCard className="w-6 h-6 text-emerald-400" />
         <h2 className="text-xl font-bold text-white">Secure Credit / Debit Card Payment</h2>
       </div>
 
       {/* Name on Card Input */}
       <div className="space-y-2">
-        <label className="text-sm text-slate-400 font-medium">Name on Card</label>
+        <label className="text-sm text-slate-300 font-medium">Name on Card</label>
         <input 
           type="text" 
           required
           placeholder="e.g. P. M. Silva" 
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          className="w-full bg-slate-950/90 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
         />
       </div>
 
       {/* Email Input */}
       <div className="space-y-2">
-        <label className="text-sm text-slate-400 font-medium">Email Address (For Digital Ticket)</label>
+        <label className="text-sm text-slate-300 font-medium">Email Address (For Digital Ticket)</label>
         <input 
           type="email" 
           required
           placeholder="piyumi@example.com" 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          className="w-full bg-slate-950/90 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
         />
       </div>
 
-      {/* 🌟 STRIPE SECURE CARD ELEMENT BOX */}
+      {/* STRIPE SECURE CARD ELEMENT BOX */}
       <div className="space-y-2">
-        <label className="text-sm text-slate-400 font-medium">Credit or Debit Card Details</label>
-        <div className="w-full bg-slate-950 border border-slate-800 focus-within:border-emerald-500 rounded-xl py-4 px-4 transition-colors">
+        <label className="text-sm text-slate-300 font-medium">Credit or Debit Card Details</label>
+        <div className="w-full bg-slate-950/90 border border-slate-800 focus-within:border-emerald-500 rounded-xl py-4 px-4 transition-colors shadow-inner">
           <CardElement 
             options={{
               style: {
@@ -157,7 +160,7 @@ const CheckoutForm = ({ id, seats, total, showTime, name, setName, email, setEma
       <button 
         type="submit"
         disabled={isProcessing || !stripe}
-        className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-base cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+        className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all duration-300 shadow-lg flex items-center justify-center gap-2 text-base cursor-pointer disabled:bg-slate-800/60 disabled:text-slate-500 disabled:cursor-not-allowed shadow-emerald-500/10 hover:shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0"
       >
         {isProcessing ? (
           <>
@@ -188,7 +191,7 @@ const Checkout = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
-  // Status States - 🌟 (Fixed the error duplicate lines here)
+  // Status States
   const [isSuccess, setIsSuccess] = useState(false);
   const [qrImage, setQrImage] = useState('');
 
@@ -216,55 +219,61 @@ const Checkout = () => {
   }
 
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 pb-16">
+    // Main outer wrapper with optimized, lighter background gradient for higher image visibility
+    <div 
+      className="bg-slate-950 min-h-screen text-slate-100 pb-16 bg-cover bg-center bg-fixed"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(2, 6, 23, 0.4), rgba(2, 6, 23, 0.7)), url(${bgImage})`
+      }}
+    >
       
       {/* 1. PAYMENT SUCCESS RECEIPT */}
       {isSuccess ? (
         <div className="max-w-md mx-auto px-4 pt-16 animate-fade-in">
-          <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.1)] relative">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/40 rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5),_0_0_30px_rgba(16,185,129,0.15)] relative ring-1 ring-white/10">
             
             {/* Ticket Header */}
-            <div className="bg-emerald-500 text-slate-950 p-6 text-center space-y-2">
+            <div className="bg-emerald-500 text-slate-950 p-6 text-center space-y-2 shadow-md">
               <CheckCircle className="w-12 h-12 mx-auto animate-bounce" />
               <h2 className="text-2xl font-extrabold tracking-tight">Booking Confirmed!</h2>
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Enjoy your event</p>
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Enjoy your event</p>
             </div>
 
             {/* Ticket Content */}
             <div className="p-6 space-y-6 relative">
               
               {/* Decorative Ticket Side Notches */}
-              <div className="absolute -left-3 top-1/3 w-6 h-6 bg-slate-950 rounded-full border-r border-slate-800"></div>
-              <div className="absolute -right-3 top-1/3 w-6 h-6 bg-slate-950 rounded-full border-l border-slate-800"></div>
+              <div className="absolute -left-3 top-1/3 w-6 h-6 bg-slate-950 rounded-full border-r border-slate-800/80"></div>
+              <div className="absolute -right-3 top-1/3 w-6 h-6 bg-slate-950 rounded-full border-l border-slate-800/80"></div>
 
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Customer Name</span>
-                <p className="text-white font-bold text-lg">{name}</p>
+                <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Customer Name</span>
+                <p className="text-white font-extrabold text-xl drop-shadow-sm">{name}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t border-b border-slate-800 py-4">
+              <div className="grid grid-cols-2 gap-4 border-t border-b border-slate-800/80 py-4">
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider">Selected Seats</span>
-                  <p className="text-emerald-400 font-extrabold text-base tracking-wide">
+                  <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Selected Seats</span>
+                  <p className="text-emerald-400 font-black text-lg tracking-wide">
                     {seats.join(', ')}
                   </p>
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider">Total Paid</span>
-                  <p className="text-white font-extrabold text-base">LKR {total}</p>
+                  <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Paid</span>
+                  <p className="text-white font-black text-lg">LKR {total}</p>
                 </div>
               </div>
 
               {showTime && (
-                <div className="flex items-center gap-2 bg-slate-950 border border-slate-800/80 rounded-xl p-3 text-sm text-slate-300">
+                <div className="flex items-center gap-2 bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 text-sm text-slate-300 shadow-inner">
                   <Clock className="w-4 h-4 text-emerald-400" />
-                  <span>Show Time: <strong className="text-white">{showTime}</strong></span>
+                  <span>Show Time: <strong className="text-white font-bold">{showTime}</strong></span>
                 </div>
               )}
 
               {/* QR Code Section */}
               <div className="flex flex-col items-center justify-center pt-2 space-y-3">
-                <div className="p-4 bg-white rounded-2xl shadow-inner group flex items-center justify-center min-w-[160px] min-h-[160px]">
+                <div className="p-4 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)] group flex items-center justify-center min-w-[160px] min-h-[160px] transform hover:scale-102 transition-transform">
                   {qrImage ? (
                     <img src={qrImage} alt="Event Ticket QR Code" className="w-32 h-32 mx-auto object-contain" />
                   ) : (
@@ -274,15 +283,15 @@ const Checkout = () => {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-slate-500 font-mono">TICKET-ID: {id.substring(0, 8).toUpperCase()}-{seats[0]}</span>
+                <span className="text-xs text-slate-400 font-mono tracking-wider bg-slate-950/60 px-3 py-1 rounded-md border border-slate-800/40">TICKET-ID: {id.substring(0, 8).toUpperCase()}-{seats[0]}</span>
               </div>
             </div>
 
             {/* Ticket Footer Back Button */}
-            <div className="bg-slate-950 p-4 border-t border-slate-800/60 text-center">
+            <div className="bg-slate-950/80 p-4 border-t border-slate-800/80 text-center">
               <button 
                 onClick={() => navigate('/')} 
-                className="w-full bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 hover:border-emerald-500/30 py-3 rounded-xl font-bold transition-all text-sm cursor-pointer"
+                className="w-full bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-slate-800 hover:border-emerald-500/30 py-3 rounded-xl font-bold transition-all text-sm cursor-pointer shadow-md"
               >
                 Return to Home Page
               </button>
@@ -296,13 +305,13 @@ const Checkout = () => {
           {/* Back Button */}
           <button 
             onClick={() => window.history.back()} 
-            className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-6 group"
+            className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition-colors mb-6 group bg-slate-900/60 backdrop-blur-md border border-slate-800/90 px-4 py-2 rounded-xl w-fit shadow-lg"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Back to Seats</span>
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start relative z-10">
             
             {/* Form Wrapped with Elements */}
             <Elements stripe={stripePromise}>
@@ -321,26 +330,26 @@ const Checkout = () => {
             </Elements>
 
             {/* Quick Order Summary Widget */}
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-              <h3 className="text-lg font-bold text-white pb-2 border-b border-slate-800">Order Summary</h3>
+            <div className="lg:col-span-2 bg-slate-900/75 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-[0_15px_35px_rgba(0,0,0,0.6)] space-y-4 ring-1 ring-white/10">
+              <h3 className="text-lg font-bold text-white pb-2 border-b border-slate-800/80 tracking-wide">Order Summary</h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Selected Seats:</span>
-                  <span className="text-white font-bold tracking-wide">{seats.join(', ')}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-300">Selected Seats:</span>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-md font-extrabold tracking-wider">{seats.join(', ')}</span>
                 </div>
                 {showTime && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Show Time:</span>
-                    <span className="text-emerald-400 font-bold">{showTime}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Show Time:</span>
+                    <span className="text-white font-bold">{showTime}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Total Tickets:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-300">Total Tickets:</span>
                   <span className="text-white font-bold">{seats.length} Ticket(s)</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t border-slate-800 text-base">
-                  <span className="text-slate-400 font-medium">Total Amount:</span>
-                  <span className="text-emerald-400 font-extrabold">LKR {total}</span>
+                <div className="flex justify-between items-center pt-3 border-t border-slate-800/80 text-base bg-slate-950/40 p-2 rounded-xl border border-slate-800/40 mt-1">
+                  <span className="text-slate-300 font-semibold pl-1">Total Amount:</span>
+                  <span className="text-emerald-400 font-black text-lg pr-1">LKR {total}</span>
                 </div>
               </div>
             </div>

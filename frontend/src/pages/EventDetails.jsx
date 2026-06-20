@@ -3,6 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, MapPin, Loader2, Minus, Plus, Ticket, ArrowLeft, Clock } from 'lucide-react';
 import axios from 'axios';
 
+// Imported the background image pattern for consistent styling
+import bgImage from '/src/assets/bg-pattern.jpg';
+
 const EventDetails = () => {
   const { id } = useParams(); 
   const navigate = useNavigate(); 
@@ -49,7 +52,7 @@ const EventDetails = () => {
     }
   };
 
-  // The logic that dismisses the alert and sends it directly to Login and remembers the way back
+  // Logic that handles redirecting to booking page or login page if unauthenticated
   const handleBookingRedirect = () => {
     const loggedInUser = localStorage.getItem('user');
     
@@ -59,7 +62,7 @@ const EventDetails = () => {
       return;
     }
 
-    //If it's a movie, the URL path is created with the time (`&time=${selectedTime}`), or in the usual way.
+    // If it's a movie, include the time in query params, otherwise handle normally
     const bookingPath = event.category === 'Movie' 
       ? `/booking/${event._id}?qty=${quantity}&time=${encodeURIComponent(selectedTime)}`
       : `/booking/${event._id}?qty=${quantity}`;
@@ -99,15 +102,22 @@ const EventDetails = () => {
     );
   }
 
-  // dynamically calculate Total Price
+  // Dynamically calculate Total Price
   const totalPrice = event.ticketPrice * quantity;
 
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 pb-16">
+    // Main outer wrapper with lighter background gradient to remove extreme darkness
+    <div 
+      className="bg-slate-950 min-h-screen text-slate-100 pb-16 bg-cover bg-center bg-fixed"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(2, 6, 23, 0.3), rgba(2, 6, 23, 0.65)), url(${bgImage})`
+      }}
+    >
+      {/* Top Navigation Button Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <button 
           onClick={() => navigate('/')} 
-          className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-6 group"
+          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition-colors mb-6 group bg-slate-900/60 backdrop-blur-md border border-slate-800/80 px-4 py-2 rounded-xl w-fit shadow-md"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span>Back to Events</span>
@@ -115,37 +125,37 @@ const EventDetails = () => {
       </div>
 
       {/* Main Content Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         
         {/* Event Image & Full Description */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
-            {/* If the event image is not available, display a default image onError */}
+          <div className="border border-slate-800/80 rounded-2xl overflow-hidden bg-slate-900/40 backdrop-blur-md shadow-xl">
+            {/* Fallback default image displayed on image load error */}
             <img 
               src={event.image || "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=800"} 
               alt={event.title} 
-              className="w-full h-[300px] md:h-[450px] object-cover bg-slate-950" 
+              className="w-full h-[300px] md:h-[450px] object-cover bg-slate-950/50" 
               onError={(e) => {
                 e.target.src = "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=800";
               }}
             />
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-4 shadow-xl">
+          <div className="bg-slate-900/85 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 md:p-8 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight">{event.title}</h1>
-              <span className="text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full">
+              <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight drop-shadow-md">{event.title}</h1>
+              <span className="text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full shadow-sm">
                 {event.category}
               </span>
             </div>
             
             {/* Quick Details Chips */}
-            <div className="flex flex-wrap gap-4 pt-2 pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+            <div className="flex flex-wrap gap-4 pt-2 pb-4 border-b border-slate-800/60">
+              <div className="flex items-center gap-2 text-sm text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60 shadow-sm">
                 <Calendar className="w-4 h-4 text-emerald-400" />
                 <span>{new Date(event.date).toLocaleDateString()}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+              <div className="flex items-center gap-2 text-sm text-slate-300 bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60 shadow-sm">
                 <MapPin className="w-4 h-4 text-emerald-400" />
                 <span>{event.venue}</span>
               </div>
@@ -153,12 +163,12 @@ const EventDetails = () => {
 
             {/* If the event is a movie, display show times */}
             {event.category === 'Movie' && event.showTimes && event.showTimes.length > 0 && (
-              <div className="space-y-3 pt-2 pb-4 border-b border-slate-800">
+              <div className="space-y-3 pt-2 pb-4 border-b border-slate-800/60">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Clock className="w-5 h-5 text-emerald-400" /> Select Show Time
                 </h3>
                 <div className="flex flex-wrap gap-3">
-                  {/*Since slot is an Object, it is called separately as slot.date and slot.time */}
+                  {/* Mapping through array object slots separately as slot.date and slot.time */}
                   {event.showTimes.map((slot, index) => {
                     const slotString = `${slot.date} | ${slot.time}`;
                     return (
@@ -166,10 +176,10 @@ const EventDetails = () => {
                         key={slot._id || index}
                         type="button"
                         onClick={() => setSelectedTime(slotString)}
-                        className={`px-4 py-2 rounded-xl font-medium text-sm transition-all border ${
+                        className={`px-4 py-2 rounded-xl font-medium text-sm transition-all border cursor-pointer ${
                           selectedTime === slotString
                             ? 'bg-emerald-500 text-slate-950 border-emerald-500 shadow-lg shadow-emerald-500/20'
-                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500'
+                            : 'bg-slate-950/80 text-slate-300 border-slate-800 hover:border-slate-500 shadow-sm'
                         }`}
                       >
                         {slotString}
@@ -183,30 +193,30 @@ const EventDetails = () => {
             {/* About Event Description */}
             <div className="space-y-3">
               <h3 className="text-xl font-bold text-white">About This {event.category === 'Movie' ? 'Movie' : 'Event'}</h3>
-              <p className="text-slate-400 leading-relaxed whitespace-pre-line">{event.description}</p>
+              <p className="text-slate-300 leading-relaxed whitespace-pre-line bg-slate-950/30 p-4 rounded-xl border border-slate-800/40 shadow-inner">{event.description}</p>
             </div>
           </div>
         </div>
 
-        {/*Ticket Pricing & Quantity Selector Card */}
+        {/* Ticket Pricing & Quantity Selector Card */}
         <div className="lg:col-span-1">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl sticky top-8 space-y-6">
-            <h3 className="text-xl font-bold text-white pb-3 border-b border-slate-800">Select Tickets</h3>
+          <div className="bg-slate-900/85 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-2xl sticky top-8 space-y-6">
+            <h3 className="text-xl font-bold text-white pb-3 border-b border-slate-800/60 tracking-wide">Select Tickets</h3>
             
             {/* Price Per Ticket */}
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Ticket Price:</span>
-              <span className="text-xl font-bold text-emerald-400">LKR {event.ticketPrice}</span>
+              <span className="text-slate-300">Ticket Price:</span>
+              <span className="text-xl font-bold text-emerald-400 tracking-wide">LKR {event.ticketPrice}</span>
             </div>
 
             {/* Quantity Selector Counter */}
-            <div className="flex items-center justify-between py-3 border-y border-slate-800">
-              <span className="text-slate-400">Quantity:</span>
-              <div className="flex items-center gap-4 bg-slate-800 rounded-xl p-1 border border-slate-700">
+            <div className="flex items-center justify-between py-3 border-y border-slate-800/60">
+              <span className="text-slate-300">Quantity:</span>
+              <div className="flex items-center gap-4 bg-slate-950/80 rounded-xl p-1 border border-slate-800">
                 <button 
                   type="button"
                   onClick={() => handleQuantityChange('decrease')}
-                  className="p-2 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                  className="p-2 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors cursor-pointer"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -214,7 +224,7 @@ const EventDetails = () => {
                 <button 
                   type="button"
                   onClick={() => handleQuantityChange('increase')}
-                  className="p-2 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                  className="p-2 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -222,8 +232,8 @@ const EventDetails = () => {
             </div>
 
             {/* Subtotal Display */}
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400 font-medium">Total Amount:</span>
+            <div className="flex items-center justify-between bg-slate-950/30 p-3 rounded-xl border border-slate-800/40">
+              <span className="text-slate-300 font-medium">Total Amount:</span>
               <span className="text-2xl font-extrabold text-white">LKR {totalPrice}</span>
             </div>
 
@@ -231,7 +241,7 @@ const EventDetails = () => {
             <button 
               type="button"
               onClick={handleBookingRedirect}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer text-base"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer text-base transform hover:-translate-y-0.5 duration-200"
             >
               <Ticket className="w-5 h-5" />
               Proceed to Booking

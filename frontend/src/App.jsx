@@ -12,11 +12,22 @@ import AdminDashboard from './pages/AdminDashboard';
 import ManageEvents from './components/ManageEvents'; // Imported the ManageEvents component
 import AboutUs from './pages/AboutUs'; // Imported the AboutUs component for the new page
 
+// 1. Direct Import of the image to guarantee Vite bundles it properly
+import bgImage from '/src/assets/bg-pattern.jpg';
+
 function App() {
   return (
     <Router>
-      
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      {/* 2. Set the background image inline with a lightened dark gradient layer on top.
+           Changed opacity from 0.9/0.95 to 0.75/0.85 so your background image pattern 
+           is much more visible and beautiful!
+      */}
+      <div 
+        className="min-h-screen bg-cover bg-center bg-fixed text-slate-100 flex flex-col"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(2, 6, 23, 0.75), rgba(2, 6, 23, 0.45)), url(${bgImage})`
+        }}
+      >
         <Navbar /> 
         
         <main className="grow">
@@ -74,3 +85,4 @@ function App() {
 }
 
 export default App;
+

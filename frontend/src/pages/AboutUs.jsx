@@ -2,11 +2,9 @@ import { Target, Rocket } from 'lucide-react';
 
 const AboutUs = () => {
   return (
-    <div className="min-h-screen bg-slate-950 text-white pt-24 pb-16 px-6 md:px-12 overflow-hidden relative flex flex-col justify-center">
+    <div className="min-h-screen bg-transparent text-white pt-24 pb-16 px-6 md:px-12 overflow-hidden relative flex flex-col justify-center">
       
-      {/* Background Decorative Gradient Blur Effect */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      {/* 🌟 Removed the absolute decorative gradient blurs to keep the background clean and clear */}
 
       <div className="max-w-5xl mx-auto space-y-16 relative z-10 w-full">
         
@@ -27,7 +25,7 @@ const AboutUs = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Corporate Mission Segment Block */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500 shadow-2xl">
+          <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500 shadow-2xl">
             <div className="p-4 bg-emerald-500/10 text-emerald-400 rounded-2xl w-fit mb-6 border border-emerald-500/20">
               <Target className="w-6 h-6" />
             </div>
@@ -38,7 +36,7 @@ const AboutUs = () => {
           </div>
 
           {/* Corporate Vision Segment Block */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500 shadow-2xl">
+          <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500 shadow-2xl">
             <div className="p-4 bg-purple-500/10 text-purple-400 rounded-2xl w-fit mb-6 border border-purple-500/20">
               <Rocket className="w-6 h-6" />
             </div>
