@@ -296,7 +296,7 @@ const OrganizerDashboard = () => {
         {/* Header Component */}
         <div className="max-w-5xl mx-auto mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Organizer Portal 🚀</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight">Organizer Portal </h1>
             <p className="text-slate-400 mt-1">
               Welcome back, <span className="text-emerald-400 font-semibold">{user?.name}</span> {user?.organizationName ? `(${user.organizationName})` : ''}
             </p>

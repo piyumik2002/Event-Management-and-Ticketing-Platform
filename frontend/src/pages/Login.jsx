@@ -110,7 +110,7 @@ const Login = () => {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
       <div className="w-full max-w-md rounded-xl bg-slate-900 p-8 border border-slate-800 shadow-xl">
         <h2 className="text-2xl font-bold text-center text-white mb-6">
-          {isRegister ? 'Create an Account 🎉' : 'Welcome Back! 👋'}
+          {isRegister ? 'Create an Account ' : 'Welcome Back! '}
         </h2>
 
         {/* Error message */}

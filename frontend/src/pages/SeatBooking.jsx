@@ -111,7 +111,7 @@ const SeatBooking = () => {
         
         {/* If it's a movie, display the selected show time at the top */}
         <div className="flex flex-wrap items-center gap-4">
-          <p className="text-sm text-slate-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Please select exactly <span className="text-emerald-400 font-bold">{allowedSeatsCount}</span> seat(s).</p>
+          <p className="text-sm text-slate-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Please select exactly <span className="text-emerald-400 font-bold">{allowedSeatsCount}</span> seat.</p>
           {event.category === 'Movie' && selectedTime && (
             <div className="flex items-center gap-1.5 bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/40 text-emerald-300 px-3 py-1 rounded-lg text-xs font-bold shadow-md">
               <Clock className="w-3.5 h-3.5 text-emerald-400" /> Show Time: {selectedTime}

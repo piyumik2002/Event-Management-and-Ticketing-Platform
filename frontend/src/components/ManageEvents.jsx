@@ -150,12 +150,13 @@ const ManageEvents = () => {
     return (
         <div className="bg-slate-950 min-h-screen text-slate-100 pb-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                {/* Updated navigation path and text to point to the Organizer Dashboard */}
                 <button 
-                    onClick={() => navigate('/')} 
+                    onClick={() => navigate('/organizer/dashboard')} 
                     className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-6 group"
                 >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    <span>Back to Home</span>
+                    <span>Back to Dashboard</span>
                 </button>
 
                 <div className="flex items-center justify-between mb-8">
